@@ -24,7 +24,7 @@ as well as to verify your TL classifier.
 TODO (for Yousuf and Aaron): Stopline location for each traffic light.
 '''
 
-LOOKAHEAD_WPS = 100 # Number of waypoints we will publish. You can change this number
+LOOKAHEAD_WPS = 40 # Number of waypoints we will publish. You can change this number
 MAX_DECEL = 0.5
 
 
@@ -46,12 +46,14 @@ class WaypointUpdater(object):
         self.waypoints_2d = None
         self.waypoint_tree = None
         self.stopline_wp_idx = -1
+        self.debug_str = "."
+        self.last_idx = None
 
         #rospy.logwarn("WaypointUpdater ................")
         self.loop() # rospy.spin()
 
     def loop(self):
-        rate = rospy.Rate(10)
+        rate = rospy.Rate(3)
         while not rospy.is_shutdown():
             #rospy.logwarn("WaypointUpdater::Update() ................")
             if self.pose and self.base_waypoints:
@@ -81,18 +83,37 @@ class WaypointUpdater(object):
         return closest_idx
 
     def publish_waypoints(self, closest_idx):
+        wp_length = len(self.base_waypoints.waypoints)
+        #farthest_idx = (closest_idx + LOOKAHEAD_WPS) % wp_length
         farthest_idx = closest_idx + LOOKAHEAD_WPS
         
         lane = Lane()
         lane.header = self.base_waypoints.header
-        base_waypoints = self.base_waypoints.waypoints[closest_idx:farthest_idx]
+
+        #base_waypoints = self.base_waypoints.waypoints[closest_idx:farthest_idx]
+        #'''
+        farthest_idx_mod = farthest_idx % wp_length
+        if farthest_idx_mod <= closest_idx:
+        #if farthest_idx < closest_idx:
+            base_waypoints = self.base_waypoints.waypoints[closest_idx:wp_length] + self.base_waypoints.waypoints[0:farthest_idx_mod]
+        else:
+            base_waypoints = self.base_waypoints.waypoints[closest_idx:farthest_idx]
+        #'''
         
-        if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx):
+        if not self.last_idx or self.last_idx != self.stopline_wp_idx:
+            self.last_idx = self.stopline_wp_idx
+            rospy.logwarn("self.stopline_wp_idx: {0}".format(self.stopline_wp_idx))
+        #if self.stopline_wp_idx == -1 or (self.stopline_wp_idx >= farthest_idx and farthest_idx_mod == farthest_idx):
+        if self.stopline_wp_idx == -1 or self.stopline_wp_idx >= farthest_idx:
             lane.waypoints = base_waypoints
+            #rospy.logwarn("...")
         else:
             #rospy.logwarn("slowing down waypoints")
+            #lane.waypoints = base_waypoints
             lane.waypoints = self.slowdown_waypoints(base_waypoints, closest_idx)
             
+        if len(lane.waypoints) != LOOKAHEAD_WPS:
+            rospy.logwarn("len of lane.waypoints == {0}".format(len(lane.waypoints)))
         self.final_waypoints_pub.publish(lane)
 
     def slowdown_waypoints(self, waypoints, closest_idx):
@@ -101,7 +122,7 @@ class WaypointUpdater(object):
             p = Waypoint()
             p.pose = wp.pose
             
-            stop_idx_diff = max(self.stopline_wp_idx-(closest_idx+10), 0)
+            stop_idx_diff = max(self.stopline_wp_idx-(closest_idx+4), 0)
             dist = self.distance(waypoints, i, stop_idx_diff)
             vel = math.sqrt(2 * MAX_DECEL * dist)
             if vel < 1.0:
