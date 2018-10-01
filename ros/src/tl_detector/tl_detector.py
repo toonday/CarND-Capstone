@@ -24,7 +24,6 @@ class TLDetector(object):
         self.lights = []
         self.waypoints_2d = None
         self.waypoint_tree = None
-        self.semi_state = None
 
         sub1 = rospy.Subscriber('/current_pose', PoseStamped, self.pose_cb)
         sub2 = rospy.Subscriber('/base_waypoints', Lane, self.waypoints_cb)
@@ -53,22 +52,18 @@ class TLDetector(object):
         self.last_wp = -1
         self.state_count = 0
 
-        #rospy.logwarn("TLDetector ................")
         rospy.spin()
 
     def pose_cb(self, msg):
-        #rospy.logwarn("TLDetector::pose_cb() ................")
         self.pose = msg
 
     def waypoints_cb(self, waypoints):
-        #rospy.logwarn("TLDetector::waypoints_cb() ................")
         self.waypoints = waypoints
         if not self.waypoints_2d:
             self.waypoints_2d = [[wp.pose.pose.position.x, wp.pose.pose.position.y] for wp in waypoints.waypoints]
             self.waypoint_tree = KDTree(self.waypoints_2d)
 
     def traffic_cb(self, msg):
-        #rospy.logwarn("TLDetector::traffic_cb() ................")
         self.lights = msg.lights
 
     def image_cb(self, msg):
@@ -79,7 +74,6 @@ class TLDetector(object):
             msg (Image): image from car-mounted camera
 
         """
-        #rospy.logwarn("TLDetector::image_cb() ................")
         self.has_image = True
         self.camera_image = msg
         light_wp, state = self.process_traffic_lights()
@@ -154,10 +148,8 @@ class TLDetector(object):
             car_pos = [self.pose.pose.position.x, self.pose.pose.position.y]
             car_wp_idx = self.get_closest_waypoint(car_pos)
 
-        semi_state = False
         #TODO find the closest visible traffic light (if one exists)
         if self.pose and self.waypoints:
-            semi_state = True
             curr_idx_diff = len(self.waypoints.waypoints)
             for i, light in enumerate(self.lights):
                 line_pos = stop_line_positions[i]
@@ -168,19 +160,13 @@ class TLDetector(object):
                     curr_idx_diff = idx_diff
                     closest_light = light
                     closest_line_wp_idx = line_wp_idx
-        else:
-            semi_state = False
-        if self.semi_state != semi_state:
-            rospy.logwarn("semi_state: {0}".format(semi_state))
-            rospy.logwarn("self.pose: {0} and self.waypoints: {1}".format((self.pose == None), (self.waypoints == None)))
-            self.semi_state = semi_state
 
         if closest_light:
             state = self.get_light_state(closest_light)
             return closest_line_wp_idx, state
 
-        #self.waypoints = None
         return -1, TrafficLight.UNKNOWN
+
 
 if __name__ == '__main__':
     try:

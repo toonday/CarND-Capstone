@@ -5,7 +5,6 @@ import csv
 import math
 
 from geometry_msgs.msg import Quaternion
-
 from styx_msgs.msg import Lane, Waypoint
 
 import tf
@@ -54,7 +53,7 @@ class WaypointLoader(object):
                 p.twist.twist.linear.x = float(self.velocity)
 
                 waypoints.append(p)
-        #return self.decelerate(waypoints)
+
         return waypoints
 
     def distance(self, p1, p2):

@@ -98,7 +98,6 @@ class DBWNode(object):
         self.angular_vel = msg.twist.angular.z
 
     def velocity_cb(self, msg):
-        #rospy.logwarn("DBWNode::velocity_cb() ................")
         self.current_vel = msg.twist.linear.x
 
     def publish(self, throttle, brake, steer):
@@ -118,6 +117,7 @@ class DBWNode(object):
         bcmd.pedal_cmd_type = BrakeCmd.CMD_TORQUE
         bcmd.pedal_cmd = brake
         self.brake_pub.publish(bcmd)
+
 
 if __name__ == '__main__':
     DBWNode()
