@@ -11,6 +11,8 @@ from scipy.spatial import KDTree
 import tf
 import cv2
 import yaml
+import os
+import glob
 
 STATE_COUNT_THRESHOLD = 3
 
@@ -44,7 +46,6 @@ class TLDetector(object):
         self.upcoming_red_light_pub = rospy.Publisher('/traffic_waypoint', Int32, queue_size=1)
 
         self.bridge = CvBridge()
-        self.light_classifier = TLClassifier()
         mf_path = self.get_model_file_path()
         self.light_classifier = TLClassifier(mf_path)
         self.listener = tf.TransformListener()
@@ -144,8 +145,8 @@ class TLDetector(object):
         """
         #return light.state  # REMOVE after enabling classifier
         if(not self.has_image):
-            self.prev_light_loc = None
-            return False
+            self.prev_light_loc = -1
+            return TrafficLight.UNKNOWN
 
         cv_image = self.bridge.imgmsg_to_cv2(self.camera_image, "bgr8")
 
