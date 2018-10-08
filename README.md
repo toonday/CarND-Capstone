@@ -75,7 +75,12 @@ roslaunch launch/site.launch
 
 ### Team Members
 Terry Lu			-	terrylu87@gmail.com
+
 Lachlan Robinson	-	lachlan.t.robinson@gmail.com
+
 Rajat Sharma		-	fs.rajat@gmail.com
+
 Tunde Oladimeji		-	oladimejitunde@gmail.com
+
 Jinchao Lu			-	ljcikc@gmail.com
+
